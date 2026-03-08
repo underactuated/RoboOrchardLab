@@ -186,6 +186,7 @@ def main(args, accelerator):
         trainer.eval()
     else:
         trainer()
+    accelerator.end_training()
 
 
 if __name__ == "__main__":
@@ -216,12 +217,13 @@ if __name__ == "__main__":
         ),
     )
     accelerator.init_trackers("tensorboard")
-    logger.info(f"Save config to workspace dir {args.workspace}")
 
     log_basic_config(
         format="%rank %(asctime)s %(levelname)s %(filename)s:%(lineno)d | %(message)s",  # noqa: E501
         level=logging.INFO,
     )
+    logger.info(f"Save config to workspace dir {args.workspace}")
+    logger.info(f"TensorBoard logging dir: {args.logging_dir}")
     logger.info(f"if accelerator initialized:{is_initialized()}")
     logger.info(f"accelerator state: {AcceleratorState._shared_state}")
     set_start_method("spawn", force=True)

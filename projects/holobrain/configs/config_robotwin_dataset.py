@@ -32,8 +32,10 @@ dataset_config = dict(
             [0, 0, 0, 1],
         ],
         paths=[
-            "./data/robotwin2.0/aloha_agilex_demo_clean",
-            "./data/robotwin2.0/aloha_agilex_demo_randomized",
+            "./data/lmdb",
+            "./data/lmdb",
+            #"./data/robotwin2.0/aloha_agilex_demo_clean",
+            #"./data/robotwin2.0/aloha_agilex_demo_randomized",
         ],
         scale_shift=[
             [1.12735104, -0.11648428],
@@ -90,7 +92,8 @@ dataset_config = dict(
             [0, 0, 0, 1],
         ],
         paths=[
-            "./data/robotwin2.0/ur5_wsg_demo_clean",
+            "./data/lmdb",
+            #"./data/robotwin2.0/ur5_wsg_demo_clean",
         ],
         scale_shift=[
             [2.400281548500061, -0.1310516595840454],

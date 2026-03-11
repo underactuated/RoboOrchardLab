@@ -44,7 +44,9 @@ config = dict(
     patch_size=64,
     multi_task=True,
     bert_checkpoint="google-bert/bert-base-uncased",
-    checkpoint="hf://model/HorizonRobotics/HoloBrain_v0.0_GD/pretrain/model.safetensors",  # noqa: E501
+    #checkpoint="hf://model/HorizonRobotics/HoloBrain_v0.0_GD/pretrain/model.safetensors",  # noqa: E501
+    checkpoint="/data/cache/huggingface/hub/models--HorizonRobotics--HoloBrain_v0.0_GD/snapshots/01d5155037603e1610cf8695cb68469162eeadbf/pretrain/model.safetensors",
+
 )
 
 

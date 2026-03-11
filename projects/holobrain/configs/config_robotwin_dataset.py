@@ -14,11 +14,23 @@
 # implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+import os
+
 from dataset_factory import (
     processor_register,
     train_dataset_register,
     validation_dataset_register,
 )
+
+# robotwin data folder path, depends on the environment variable DATASET_ROOT,
+# if not set, use the default path "./data/lmdb"
+def _robotwin_lmdb_path() -> str:
+    dataset_root = os.getenv("DATASET_ROOT")
+    if dataset_root:
+        return os.path.join(
+            dataset_root, "Users/sergey.pankov/holobrain/data/lmdb"
+        )
+    return "./data/lmdb"
 
 dataset_config = dict(
     robotwin2_0=dict(
@@ -32,8 +44,8 @@ dataset_config = dict(
             [0, 0, 0, 1],
         ],
         paths=[
-            "./data/lmdb",
-            "./data/lmdb",
+            _robotwin_lmdb_path(),
+            _robotwin_lmdb_path(),
             #"./data/robotwin2.0/aloha_agilex_demo_clean",
             #"./data/robotwin2.0/aloha_agilex_demo_randomized",
         ],
@@ -92,7 +104,7 @@ dataset_config = dict(
             [0, 0, 0, 1],
         ],
         paths=[
-            "./data/lmdb",
+            _robotwin_lmdb_path(),
             #"./data/robotwin2.0/ur5_wsg_demo_clean",
         ],
         scale_shift=[

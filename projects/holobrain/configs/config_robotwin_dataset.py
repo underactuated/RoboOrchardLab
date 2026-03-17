@@ -206,6 +206,12 @@ def build_transforms(
 
     scale_shift = dict(type=AddScaleShift, scale_shift=scale_shift)
 
+    # set value < 0 to disable this transform
+    constant_depth = dict(
+        type="robo_orchard_lab.dataset.robotwin.transforms:ReplaceDepthWithConstant",
+        value=-1,
+    )
+
     if mode == "training":
         item_selection = dict(
             type=ItemSelection,
@@ -242,6 +248,7 @@ def build_transforms(
             scale_shift,
             joint_state_noise,
             convert_dtype,
+            constant_depth,
             kinematics,
             item_selection,
         ]
@@ -273,6 +280,7 @@ def build_transforms(
             projection_mat,
             scale_shift,
             convert_dtype,
+            constant_depth,
             kinematics,
             item_selection,
         ]
@@ -303,6 +311,7 @@ def build_transforms(
             projection_mat,
             scale_shift,
             convert_dtype,
+            constant_depth,
             kinematics,
             item_selection,
             unsqueeze_batch,

@@ -30,7 +30,8 @@ bash_command_template = (
     "export CUDA_VISIBLE_DEVICES={gpu_id} \n"
     "cp -r projects/holobrain/holobrain_robotwin_eval {robotwin_dir} \n"
     "cd {robotwin_dir} \n"
-    "python3 script/eval_policy.py --config holobrain_robotwin_eval/eval_config.yml "  # noqa: E501
+    "python3 holobrain_robotwin_eval/eval_policy_wrapper.py "
+    "--config holobrain_robotwin_eval/eval_config.yml "  # noqa: E501
     "  --overrides "
     "  --task_config {task_config} "
     "  --task_name {task_name} "

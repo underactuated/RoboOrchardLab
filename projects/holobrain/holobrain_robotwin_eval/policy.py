@@ -79,6 +79,7 @@ class HoloBrainRoboTwinPolicy:
         for cam_name, camera_data in obs["observation"].items():
             images[cam_name] = [camera_data["rgb"]]
             depths[cam_name] = [camera_data["depth"] / 1000]
+            #depths[cam_name] = [camera_data["depth"] / 1000 * 0 + .6]
 
             _tmp = np.eye(4)
             _tmp[:3] = camera_data["extrinsic_cv"]

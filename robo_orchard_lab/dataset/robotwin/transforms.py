@@ -36,6 +36,7 @@ __all__ = [
     "EpisodeSamplerConfig",
     "AddItems",
     "AddScaleShift",
+    "ReplaceDepthWithConstant",
     "ConvertDataType",
     "IdentityTransform",
     "ImageChannelFlip",
@@ -68,6 +69,20 @@ class MoveEgoToCam:
 
 class IdentityTransform:
     def __call__(self, data):
+        return data
+
+
+class ReplaceDepthWithConstant:
+    """
+    for replacing depths with a constant value
+    """
+    def __init__(self, value):
+        self.value = value
+
+    def __call__(self, data):
+        if self.value < 0 or ("depths" not in data):
+            return data
+        data["depths"] = data["depths"] * 0 + self.value
         return data
 
 

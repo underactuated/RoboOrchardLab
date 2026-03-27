@@ -18,6 +18,7 @@ import argparse
 import json
 import logging
 import os
+from inspect import signature
 from multiprocessing import set_start_method
 
 import torch
@@ -38,8 +39,150 @@ from robo_orchard_lab.pipeline.hooks import (
     StatsMonitorConfig,
 )
 from robo_orchard_lab.utils import log_basic_config
+from robo_orchard_lab.utils.torch import switch_model_mode
 
 logger = logging.getLogger(__file__)
+
+
+class ValidationLossTrainer(SimpleTrainer):
+    """SimpleTrainer extension that always computes validation loss.
+
+    It optionally computes action metrics when `self.metric` is provided,
+    and can cap validation iteration count for faster debug cycles.
+    """
+
+    def __init__(self, *args, max_val_batches=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_val_batches = (
+            max_val_batches if max_val_batches and max_val_batches > 0 else None
+        )
+
+    def _iter_named_losses(self, outputs, prefix=""):
+        """Recursively collect scalar loss terms from nested model outputs."""
+        if outputs is None:
+            return
+        if isinstance(outputs, dict):
+            for name, value in outputs.items():
+                full_name = f"{prefix}.{name}" if prefix else name
+                if "loss" in name and value is not None and hasattr(
+                    value, "mean"
+                ):
+                    yield full_name, value.mean().item()
+                else:
+                    yield from self._iter_named_losses(value, full_name)
+            return
+        if isinstance(outputs, (list, tuple)):
+            for idx, value in enumerate(outputs):
+                full_name = f"{prefix}[{idx}]" if prefix else f"[{idx}]"
+                yield from self._iter_named_losses(value, full_name)
+
+    def _compute_validation_loss(self, batch):
+        """Run one train-mode forward pass and return total/component losses."""
+        with switch_model_mode(self.model, target_mode="train"):
+            loss_outputs = self.model(batch)
+        component_losses = {}
+        for name, value in self._iter_named_losses(loss_outputs):
+            component_losses[name] = component_losses.get(name, 0.0) + value
+        if not component_losses:
+            return None, {}
+        return sum(component_losses.values()), component_losses
+
+    @torch.no_grad()
+    def eval(self):
+        """Evaluate val set and log loss metrics (and optional action metrics)."""
+        assert self.val_dataloader is not None, (
+            "val_dataloader should not be None"
+        )
+        training = self.model.training
+        self.model.eval()
+        torch.cuda.empty_cache()
+        if self.accelerator.is_main_process:
+            logger.info("\n" + "=" * 50 + "BEGIN EVAL" + "=" * 50)
+        total_loss = 0.0
+        component_loss_totals = {}
+        component_loss_counts = {}
+        batches_with_loss = 0
+        processed_batches = 0
+        for val_step_id, batch in enumerate(self.val_dataloader):
+            # Optional early stop for faster debug iterations.
+            if (
+                self.max_val_batches is not None
+                and processed_batches >= self.max_val_batches
+            ):
+                break
+            processed_batches += 1
+            model_outputs = self.model(batch)
+            if self.metric is not None:
+                self.metric.update(batch, model_outputs)
+            batch_loss, batch_component_losses = self._compute_validation_loss(
+                batch
+            )
+            if batch_loss is not None:
+                total_loss += batch_loss
+                batches_with_loss += 1
+                for name, value in batch_component_losses.items():
+                    component_loss_totals[name] = (
+                        component_loss_totals.get(name, 0.0) + value
+                    )
+                    component_loss_counts[name] = (
+                        component_loss_counts.get(name, 0) + 1
+                    )
+            if (
+                val_step_id + 1
+            ) % 10 == 0 and self.accelerator.is_main_process:
+                logger.info(f"eval: {val_step_id + 1}")
+        self.accelerator.wait_for_everyone()
+        metrics = {}
+        if self.metric is not None:
+            if "accelerator" in signature(self.metric.compute).parameters:
+                metrics = self.metric.compute(accelerator=self.accelerator)
+            else:
+                metrics = self.metric.compute()
+            if metrics is None:
+                metrics = {}
+        self.accelerator.wait_for_everyone()
+        if batches_with_loss > 0:
+            validation_loss = total_loss / batches_with_loss
+            metrics["validation_loss"] = validation_loss
+            component_items = []
+            for name in sorted(component_loss_totals):
+                component_avg = (
+                    component_loss_totals[name] / component_loss_counts[name]
+                )
+                metrics[f"validation_{name}"] = component_avg
+                component_items.append(f"{name}={component_avg:.6f}")
+            if self.accelerator.is_main_process:
+                logger.info(
+                    f"total_validation_loss: {validation_loss:.6f} "
+                    f"from {batches_with_loss} batches"
+                )
+                if component_items:
+                    logger.info(
+                        "validation_loss_components: "
+                        + ", ".join(component_items)
+                    )
+        if (
+            self.max_val_batches is not None
+            and self.accelerator.is_main_process
+            and processed_batches >= self.max_val_batches
+        ):
+            logger.info(
+                f"validation limited to {self.max_val_batches} batches"
+            )
+        if metrics:
+            eval_step = self.trainer_progress_state.global_step_id
+            # Prefix with `val/` so curves are separated from training metrics.
+            self.accelerator.log(
+                {f"val/{k}": v for k, v in metrics.items()},
+                step=eval_step,
+            )
+            if self.accelerator.is_main_process:
+                logger.info(f"tensorboard_eval_step: {eval_step}")
+        if self.metric is not None:
+            self.metric.reset()
+        torch.cuda.empty_cache()
+        self.model.train(training)
+        return metrics
 
 
 class MyBatchProcessor(SimpleBatchProcessor):
@@ -141,14 +284,18 @@ def main(args, accelerator):
             persistent_workers=num_workers > 0,
         )
         pred_steps = config.get("pred_steps", 64)
-        metric = ActionMetric(
-            eval_horizons=[pred_steps // 4, pred_steps // 2, pred_steps],
+        metric = (
+            ActionMetric(
+                eval_horizons=[pred_steps // 4, pred_steps // 2, pred_steps],
+            )
+            if args.do_eval_actions
+            else None
         )
     else:
         val_dataloader = None
         metric = None
 
-    trainer = SimpleTrainer(
+    trainer = ValidationLossTrainer(
         model=model,
         dataloader=train_dataloader,
         optimizer=optimizer,
@@ -170,8 +317,8 @@ def main(args, accelerator):
             ),
         ],
         max_step=config.get("max_step"),
-        step_eval_freq=config.get("save_step_freq"),
-        #step_eval_freq=config.get("step_log_freq"),
+        #step_eval_freq=config.get("save_step_freq"),
+        step_eval_freq=config.get("step_log_freq"),
         lr_scheduler_step_at="step",
         resume_from=config.get("resume_from"),
         resume_share_dir=(
@@ -179,6 +326,7 @@ def main(args, accelerator):
         ),
         val_dataloader=val_dataloader,
         metric=metric,
+        max_val_batches=args.max_val_batches,
     )
     if args.eval_only:
         assert val_dataset is not None, (
@@ -197,6 +345,25 @@ if __name__ == "__main__":
     parser.add_argument("--logging_dir", type=str, default=None)
     parser.add_argument("--eval_only", action="store_true")
     parser.add_argument("--kwargs", type=str, default=None)
+    parser.add_argument(
+        "--do-eval-actions",
+        dest="do_eval_actions",
+        action="store_true",
+        help="enable action metrics during validation",
+    )
+    parser.add_argument(
+        "--no-eval-actions",
+        dest="do_eval_actions",
+        action="store_false",
+        help="skip action metrics and only report validation loss",
+    )
+    parser.add_argument(
+        "--max-val-batches",
+        type=int,
+        default=None,
+        help="maximum number of validation batches per eval; unset or <=0 means full validation",
+    )
+    parser.set_defaults(do_eval_actions=False)
     args = parser.parse_args()
 
     if args.logging_dir is None:

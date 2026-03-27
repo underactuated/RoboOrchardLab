@@ -5,7 +5,8 @@ ARG PYTORCH3D_REF=stable
 ARG FLASH_ATTN_VERSION=2.7.3
 ARG KAOLIN_VERSION=0.18.0
 ARG ROBO_ORCHARD_CORE_REF=ae83c81b8b37ab9a99f4d0c4d994eac4f492e1ee
-ARG ROBO_ORCHARD_LAB_REF=04342840d59078f7eaab809a41390f40cac2ebfe
+#ARG ROBO_ORCHARD_LAB_REF=04342840d59078f7eaab809a41390f40cac2ebfe
+ARG ROBO_ORCHARD_LAB_REF=cc71435356758a70c971e0acd7b574762612394e
 
 # Environment setup
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -85,7 +86,8 @@ RUN umask 0000 && \
     grep -Evi "${FILTER_PATTERN}" /app/requirements.txt > /tmp/requirements.filtered.txt && \
     /app/venv/bin/pip install -r /tmp/requirements.filtered.txt && \
     /app/venv/bin/pip install --no-deps "robo_orchard_core@git+https://github.com/HorizonRobotics/robo_orchard_core.git@${ROBO_ORCHARD_CORE_REF}" && \
-    /app/venv/bin/pip install --no-deps -e "git+https://github.com/HorizonRobotics/RoboOrchardLab@${ROBO_ORCHARD_LAB_REF}#egg=robo_orchard_lab" && \
+#    /app/venv/bin/pip install --no-deps -e "git+https://github.com/HorizonRobotics/RoboOrchardLab@${ROBO_ORCHARD_LAB_REF}#egg=robo_orchard_lab" && \
+    /app/venv/bin/pip install --no-deps -e "git+https://github.com/underactuated/RoboOrchardLab.git@${ROBO_ORCHARD_LAB_REF}#egg=robo_orchard_lab" && \
     /app/venv/bin/pip install psutil==7.2.2 && \
     /app/venv/bin/pip install --force-reinstall torch==${TORCH_VERSION} torchvision --index-url https://download.pytorch.org/whl/cu124 && \
     /app/venv/bin/python -c "import torch; version=torch.__version__; assert '+cu124' in version, f'Expected PyTorch with CUDA 12.4 (+cu124 suffix), but got version {version}'" && \

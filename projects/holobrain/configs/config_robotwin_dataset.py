@@ -209,7 +209,7 @@ def build_transforms(
     # set value < 0 to disable this transform
     constant_depth = dict(
         type="robo_orchard_lab.dataset.robotwin.transforms:ReplaceDepthWithConstant",
-        value=-1,
+        value=.6, #-1,
     )
 
     if mode == "training":

@@ -52,6 +52,7 @@ def apply_dataset_register():
     if REGISTERED:
         return
     import config_robotwin_dataset  # noqa: F401
+    import config_bridge_dataset  # noqa: F401
 
     REGISTERED = True
 

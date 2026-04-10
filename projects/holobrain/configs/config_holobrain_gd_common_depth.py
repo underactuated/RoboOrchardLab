@@ -26,7 +26,7 @@ config = dict(
     max_depth=1.2,
     num_depth=128,
     batch_size=8,
-    max_step=25000,#15000,#1000,#int(1e5),
+    max_step=99999,#25000,#15000,#1000,#int(1e5),
     step_log_freq=50,
     save_step_freq=5000,
     num_workers=8,#0,#8,
@@ -36,6 +36,7 @@ config = dict(
         "robotwin2_0_ur5_wsg",
     ],
     # validation_datasets=["robotwin2_0"],
+    validation_datasets=["robotwin_validation"],   
     deploy_datasets=[
         "robotwin2_0",
         "robotwin2_0_ur5_wsg",
@@ -45,8 +46,8 @@ config = dict(
     multi_task=True,
     bert_checkpoint="google-bert/bert-base-uncased",
     #checkpoint="hf://model/HorizonRobotics/HoloBrain_v0.0_GD/pretrain/model.safetensors",  # noqa: E501
-    #checkpoint="/data/cache/huggingface/hub/models--HorizonRobotics--HoloBrain_v0.0_GD/snapshots/01d5155037603e1610cf8695cb68469162eeadbf/pretrain/model.safetensors",
-    checkpoint="/data/Users/sergey.pankov/holobrain/model/model.safetensors",
+    checkpoint="/data/cache/huggingface/hub/models--HorizonRobotics--HoloBrain_v0.0_GD/snapshots/01d5155037603e1610cf8695cb68469162eeadbf/pretrain/model.safetensors",
+    #checkpoint="/data/Users/sergey.pankov/holobrain/model/model.safetensors",
 
 )
 

@@ -35,7 +35,8 @@ config = dict(
         "robotwin2_0",
         "robotwin2_0_ur5_wsg",
     ],
-    #validation_datasets=["robotwin2_0"],
+    # validation_datasets=["robotwin2_0"],
+    validation_datasets=["robotwin_validation"],
     deploy_datasets=[
         "robotwin2_0",
         "robotwin2_0_ur5_wsg",
@@ -46,7 +47,7 @@ config = dict(
     bert_checkpoint="google-bert/bert-base-uncased",
     #checkpoint="hf://model/HorizonRobotics/HoloBrain_v0.0_GD/pretrain/model.safetensors",  # locally # noqa: E501
     #checkpoint="/data/cache/huggingface/hub/models--HorizonRobotics--HoloBrain_v0.0_GD/snapshots/01d5155037603e1610cf8695cb68469162eeadbf/pretrain/model.safetensors", # for the cluster
-    checkpoint="/home/sergey/my_jobs/exp02/checkpoints/checkpoint_4/model.safetensors",
+    checkpoint="/home/sergey/my_jobs/exp03/checkpoints/checkpoint_19/model.safetensors",
 )
 
 

@@ -22,15 +22,31 @@ from dataset_factory import (
     validation_dataset_register,
 )
 
+# # robotwin data folder path, depends on the environment variable DATASET_ROOT,
+# # if not set, use the default path "./data/lmdb"
+# def _robotwin_lmdb_path() -> str:
+#     dataset_root = os.getenv("DATASET_ROOT")
+#     if dataset_root:
+#         return os.path.join(
+#             dataset_root, "Users/sergey.pankov/holobrain/data/lmdb"
+#         )
+#     return "./data/lmdb"
+
 # robotwin data folder path, depends on the environment variable DATASET_ROOT,
 # if not set, use the default path "./data/lmdb"
-def _robotwin_lmdb_path() -> str:
+def _robotwin_lmdb_path(split="train") -> str:
     dataset_root = os.getenv("DATASET_ROOT")
+    split_path = dict(
+        train = "./data/lmdb",
+        validation = "./data/lmdb"
+    )
     if dataset_root:
+        split_path["train"] = "Users/sergey.pankov/holobrain/data/train/lmdb"
+        split_path["validation"] = "Users/sergey.pankov/holobrain/data/validation/lmdb"
         return os.path.join(
-            dataset_root, "Users/sergey.pankov/holobrain/data/lmdb"
+            dataset_root, split_path[split]
         )
-    return "./data/lmdb"
+    return split_path[split]
 
 dataset_config = dict(
     robotwin2_0=dict(
@@ -45,7 +61,7 @@ dataset_config = dict(
         ],
         paths=[
             _robotwin_lmdb_path(),
-            _robotwin_lmdb_path(),
+            #_robotwin_lmdb_path(),
             #"./data/robotwin2.0/aloha_agilex_demo_clean",
             #"./data/robotwin2.0/aloha_agilex_demo_randomized",
         ],
@@ -127,6 +143,10 @@ dataset_config = dict(
         cam_names=["left_camera", "right_camera", "head_camera"],
     ),
 )
+
+ds_config = dataset_config["robotwin2_0"].copy()
+ds_config["paths"] = [_robotwin_lmdb_path("validation"),]
+dataset_config["robotwin_validation"] = ds_config
 
 
 def build_transforms(

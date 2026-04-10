@@ -317,8 +317,8 @@ def main(args, accelerator):
             ),
         ],
         max_step=config.get("max_step"),
-        #step_eval_freq=config.get("save_step_freq"),
-        step_eval_freq=config.get("step_log_freq"),
+        step_eval_freq=config.get("save_step_freq"),
+        #step_eval_freq=config.get("step_log_freq"),
         lr_scheduler_step_at="step",
         resume_from=config.get("resume_from"),
         resume_share_dir=(

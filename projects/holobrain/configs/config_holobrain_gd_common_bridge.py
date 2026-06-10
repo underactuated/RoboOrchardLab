@@ -25,29 +25,26 @@ config = dict(
     min_depth=0.01,
     max_depth=1.2,
     num_depth=128,
-    batch_size=8,
-    max_step=100,#99999,#25000,#15000,#1000,#int(1e5),
+    batch_size=4,#1,#8,
+    max_step=100,#500,#1000,#int(1e5),
     step_log_freq=50,
     save_step_freq=5000,
-    num_workers=8,#0,#8,
+    num_workers=0,#8,
     lr=1e-4,
     training_datasets=[
-        "robotwin2_0",
-        "robotwin2_0_ur5_wsg",
+        "bridge_tfds_train",
     ],
-    # validation_datasets=["robotwin2_0"],
-    validation_datasets=["robotwin_validation"],   
+    # validation_datasets=["bridge_tfds_validation"],
     deploy_datasets=[
-        "robotwin2_0",
-        "robotwin2_0_ur5_wsg",
+        "bridge_tfds_train",
     ],
+    bridge_max_episodes=1,
     dst_wh=(320, 256),
     patch_size=64,
     multi_task=True,
     bert_checkpoint="google-bert/bert-base-uncased",
-    #checkpoint="hf://model/HorizonRobotics/HoloBrain_v0.0_GD/pretrain/model.safetensors",  # noqa: E501
-    checkpoint="/data/cache/huggingface/hub/models--HorizonRobotics--HoloBrain_v0.0_GD/snapshots/01d5155037603e1610cf8695cb68469162eeadbf/pretrain/model.safetensors",
-    #checkpoint="/data/Users/sergey.pankov/holobrain/model/model.safetensors",
+    checkpoint="hf://model/HorizonRobotics/HoloBrain_v0.0_GD/pretrain/model.safetensors",  # noqa: E501
+    #checkpoint="/data/cache/huggingface/hub/models--HorizonRobotics--HoloBrain_v0.0_GD/snapshots/01d5155037603e1610cf8695cb68469162eeadbf/pretrain/model.safetensors",
 
 )
 
